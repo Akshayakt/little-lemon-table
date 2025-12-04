@@ -1,6 +1,13 @@
+import { useNavigate } from "react-router-dom";
 import heroImage from "../icons_assets/restauranfood.jpg";
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const handleReserveClick = () => {
+    navigate("/booking");
+  };
+
   return (
     <section className="hero" id="home">
       <div className="hero-inner">
@@ -11,7 +18,9 @@ const Hero = () => {
             We are a family owned Mediterranean restaurant, focused on traditional
             recipes served with a modern twist.
           </p>
-          <button className="primary-button">Reserve a Table</button>
+          <button className="primary-button" onClick={handleReserveClick}>
+            Reserve a Table
+          </button>
         </div>
         <div className="hero-image-wrapper">
           <img
@@ -26,5 +35,3 @@ const Hero = () => {
 };
 
 export default Hero;
-
-

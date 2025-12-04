@@ -130,6 +130,144 @@ body {
   box-shadow: 0 18px 35px rgba(0, 0, 0, 0.35);
 }
 
+/* Booking page */
+
+.booking-page {
+  background-color: #495e57;
+  color: #ffffff;
+  padding: 2.5rem 1rem 3rem;
+}
+
+.booking-container {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.booking-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #f4ce14;
+}
+
+.booking-header h2 {
+  margin: 0.25rem 0 1rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.booking-header p {
+  margin: 0 0 1.5rem;
+  font-size: 1rem;
+}
+
+.booking-images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.booking-image {
+  width: 100%;
+  height: 140px;
+  border-radius: 0.6rem;
+  object-fit: cover;
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.booking-form label,
+.booking-form legend {
+  font-size: 0.85rem;
+}
+
+.booking-input {
+  width: 100%;
+  border-radius: 0.35rem;
+  border: none;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  background-color: #ffffff;
+  color: #333333;
+}
+
+.booking-input:focus {
+  outline: 2px solid #f4ce14;
+  outline-offset: 1px;
+}
+
+.booking-input-error {
+  border: 2px solid #ff6b6b;
+}
+
+.seating-options {
+  border: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+
+.seating-options-error {
+  border-radius: 0.5rem;
+  border: 2px solid #ff6b6b;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.seating-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.seating-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.seating-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.seating-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+}
+
+.seating-option input:checked + .seating-indicator {
+  background-color: #ffffff;
+}
+
+.booking-submit {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 1rem;
+}
+
 /* Specials section */
 
 .main {
