@@ -1,65 +1,245 @@
-import { render, screen } from '@testing-library/react';
-import App, { initializeTimes, updateTimes } from './App';
+import { render, screen, waitFor } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import { fetchAPI } from "./scripts/api";
 
+// Mock the fetchAPI function
+jest.mock("./scripts/api");
 
-describe('initializeTimes', () => {
-  test('should return an array of available times', () => {
-    const times = initializeTimes();
-    expect(Array.isArray(times)).toBe(true);
-  });
-
-  test('should return the correct default times', () => {
-    const times = initializeTimes();
-    expect(times).toEqual(['17:00', '18:00', '19:00', '20:00']);
-  });
-
-  test('should return exactly 4 time slots', () => {
-    const times = initializeTimes();
-    expect(times.length).toBe(4);
-  });
-
-  test('should return times in the correct format (HH:MM)', () => {
-    const times = initializeTimes();
-    const timeFormat = /^\d{2}:\d{2}$/;
-    times.forEach(time => {
-      expect(time).toMatch(timeFormat);
-    });
-  });
+// Mock child components
+jest.mock("./components/hero", () => {
+	return function Hero() {
+		return <div data-testid="hero">Hero Component</div>;
+	};
 });
 
-describe('updateTimes', () => {
-  test('should return an array when called with a date', () => {
-    const result = updateTimes([], '2025-12-25');
-    expect(Array.isArray(result)).toBe(true);
-  });
+jest.mock("./components/Main", () => {
+	return function Main() {
+		return <div data-testid="main">Main Component</div>;
+	};
+});
 
-  test('should return the same times regardless of selected date (current implementation)', () => {
-    const date1 = '2025-12-25';
-    const date2 = '2025-12-26';
-    const result1 = updateTimes([], date1);
-    const result2 = updateTimes([], date2);
-    expect(result1).toEqual(result2);
-    expect(result1).toEqual(['17:00', '18:00', '19:00', '20:00']);
-  });
+jest.mock("./components/Header", () => {
+	return function Header() {
+		return <div data-testid="header">Header Component</div>;
+	};
+});
 
-  test('should return times even when state is empty array', () => {
-    const result = updateTimes([], '2025-12-25');
-    expect(result.length).toBeGreaterThan(0);
-    expect(result).toEqual(['17:00', '18:00', '19:00', '20:00']);
-  });
+jest.mock("./components/Footer", () => {
+	return function Footer() {
+		return <div data-testid="footer">Footer Component</div>;
+	};
+});
 
-  test('should return times even when state has previous values', () => {
-    const previousState = ['10:00', '11:00'];
-    const result = updateTimes(previousState, '2025-12-25');
-    expect(result).toEqual(['17:00', '18:00', '19:00', '20:00']);
-  });
+jest.mock("./components/BookingPage", () => {
+	return function BookingPage({ availableTimes, dispatchOnDateChange }) {
+		return (
+			<div data-testid="booking-page">
+				<div data-testid="available-times">
+					{availableTimes.join(", ")}
+				</div>
+				<button onClick={() => dispatchOnDateChange("2024-12-15")}>
+					Change Date
+				</button>
+			</div>
+		);
+	};
+});
 
-  test('should handle different date formats', () => {
-    const dates = ['2025-12-25', '2025-01-01', '2026-06-15'];
-    dates.forEach(date => {
-      const result = updateTimes([], date);
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(4);
-    });
-  });
+// Helper function to render App with Router
+const renderApp = (initialRoute = "/") => {
+	window.history.pushState({}, "Test page", initialRoute);
+	return render(
+		<BrowserRouter>
+			<App />
+		</BrowserRouter>
+	);
+};
+
+describe("App Component", () => {
+	beforeEach(() => {
+		jest.clearAllMocks();
+	});
+
+	describe("Initial Render", () => {
+		test("renders Header component", () => {
+			fetchAPI.mockReturnValue(["17:00", "18:00", "19:00"]);
+			renderApp();
+			expect(screen.getByTestId("header")).toBeInTheDocument();
+		});
+
+		test("renders Footer component", () => {
+			fetchAPI.mockReturnValue(["17:00", "18:00", "19:00"]);
+			renderApp();
+			expect(screen.getByTestId("footer")).toBeInTheDocument();
+		});
+
+		test("fetches available times on mount", async () => {
+			const mockTimes = ["17:00", "18:00", "19:00", "20:00"];
+			fetchAPI.mockReturnValue(mockTimes);
+
+			renderApp();
+
+			await waitFor(() => {
+				expect(fetchAPI).toHaveBeenCalledTimes(1);
+			});
+
+			expect(fetchAPI).toHaveBeenCalledWith(expect.any(Date));
+		});
+
+		test("initializes with empty availableTimes array", () => {
+			fetchAPI.mockReturnValue([]);
+			renderApp();
+			expect(fetchAPI).toHaveBeenCalled();
+		});
+	});
+
+	describe("Route: Home Page (/)", () => {
+		test("renders Hero and Main components on home route", () => {
+			fetchAPI.mockReturnValue(["17:00", "18:00"]);
+			renderApp("/");
+
+			expect(screen.getByTestId("hero")).toBeInTheDocument();
+			expect(screen.getByTestId("main")).toBeInTheDocument();
+			expect(
+				screen.queryByTestId("booking-page")
+			).not.toBeInTheDocument();
+		});
+	});
+
+	describe("Route: Booking Page (/booking)", () => {
+		test("renders BookingPage component on booking route", () => {
+			fetchAPI.mockReturnValue(["17:00", "18:00"]);
+			renderApp("/booking");
+
+			expect(screen.getByTestId("booking-page")).toBeInTheDocument();
+			expect(screen.queryByTestId("hero")).not.toBeInTheDocument();
+			expect(screen.queryByTestId("main")).not.toBeInTheDocument();
+		});
+
+		test("passes availableTimes to BookingPage", async () => {
+			const mockTimes = ["17:00", "18:00", "19:00"];
+			fetchAPI.mockReturnValue(mockTimes);
+
+			renderApp("/booking");
+
+			await waitFor(() => {
+				expect(screen.getByTestId("available-times")).toHaveTextContent(
+					mockTimes.join(", ")
+				);
+			});
+		});
+
+		test("passes dispatchOnDateChange function to BookingPage", () => {
+			fetchAPI.mockReturnValue(["17:00", "18:00"]);
+			renderApp("/booking");
+
+			expect(screen.getByTestId("booking-page")).toBeInTheDocument();
+			expect(screen.getByText("Change Date")).toBeInTheDocument();
+		});
+	});
+
+	describe("Date Selection and Time Fetching", () => {
+		test("fetches new times when date changes", async () => {
+			const initialTimes = ["17:00", "18:00"];
+			const newTimes = ["19:00", "20:00", "21:00"];
+
+			fetchAPI
+				.mockReturnValueOnce(initialTimes)
+				.mockReturnValueOnce(newTimes);
+
+			renderApp("/booking");
+
+			// Wait for initial fetch
+			await waitFor(() => {
+				expect(fetchAPI).toHaveBeenCalledTimes(1);
+			});
+
+			// Simulate date change
+			const changeButton = screen.getByText("Change Date");
+			changeButton.click();
+
+			// Wait for second fetch
+			await waitFor(() => {
+				expect(fetchAPI).toHaveBeenCalledTimes(2);
+			});
+
+			expect(fetchAPI).toHaveBeenCalledWith(expect.any(Date));
+		});
+
+		test("updates availableTimes state when date changes", async () => {
+			const initialTimes = ["17:00", "18:00"];
+			const newTimes = ["19:00", "20:00"];
+
+			fetchAPI
+				.mockReturnValueOnce(initialTimes)
+				.mockReturnValueOnce(newTimes);
+
+			renderApp("/booking");
+
+			await waitFor(() => {
+				expect(screen.getByTestId("available-times")).toHaveTextContent(
+					initialTimes.join(", ")
+				);
+			});
+
+			// Trigger date change
+			screen.getByText("Change Date").click();
+
+			await waitFor(() => {
+				expect(screen.getByTestId("available-times")).toHaveTextContent(
+					newTimes.join(", ")
+				);
+			});
+		});
+
+		test("does not fetch times if selectedDate is null", async () => {
+			fetchAPI.mockReturnValue(["17:00", "18:00"]);
+
+			renderApp();
+
+			// Only the initial useEffect should trigger fetchAPI
+			await waitFor(() => {
+				expect(fetchAPI).toHaveBeenCalledTimes(1);
+			});
+		});
+	});
+
+	describe("State Management", () => {
+		test("maintains selectedDate state correctly", async () => {
+			fetchAPI.mockReturnValue(["17:00", "18:00"]);
+
+			renderApp("/booking");
+
+			const changeButton = screen.getByText("Change Date");
+			changeButton.click();
+
+			await waitFor(() => {
+				expect(fetchAPI).toHaveBeenCalledWith(new Date("2024-12-15"));
+			});
+		});
+
+		test("availableTimes updates reflect in BookingPage", async () => {
+			const times1 = ["10:00", "11:00"];
+			const times2 = ["15:00", "16:00"];
+
+			fetchAPI.mockReturnValueOnce(times1).mockReturnValueOnce(times2);
+
+			renderApp("/booking");
+
+			await waitFor(() => {
+				expect(screen.getByTestId("available-times")).toHaveTextContent(
+					times1.join(", ")
+				);
+			});
+
+			screen.getByText("Change Date").click();
+
+			await waitFor(() => {
+				expect(screen.getByTestId("available-times")).toHaveTextContent(
+					times2.join(", ")
+				);
+			});
+		});
+	});
 });

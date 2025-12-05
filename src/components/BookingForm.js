@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { submitAPI } from "../scripts/api.js";
 
 const initialValues = {
   date: "",
@@ -9,6 +12,8 @@ const initialValues = {
 };
 
 const BookingForm = ({ availableTimes, dispatchOnDateChange }) => {
+  const navigate = useNavigate();
+
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -66,11 +71,25 @@ const BookingForm = ({ availableTimes, dispatchOnDateChange }) => {
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length === 0) {
-      // Form is valid - for now just log and reset
-      // In a real app this is where you'd send data to a server
-      console.log("Booking details", values);
-      setValues(initialValues);
-      setSubmitted(false);
+      // Use submitAPI to submit the booking form data if not the local submit function
+      if (typeof window !== 'undefined' && window.submitAPI) {
+        const success = window.submitAPI(values);
+        if (success) {
+          console.log("Booking submitted successfully:", values);
+          setValues(initialValues);
+          setSubmitted(false);
+        } else {
+          console.error("Failed to submit booking");
+        }
+      } else {
+        // Fallback if API is not available
+        if (submitAPI(values)) {
+          console.log("Booking details", values);
+          setValues(initialValues);
+          setSubmitted(false);
+          navigate("/booking-confirmation");
+        }
+      }
     }
   };
 
@@ -85,6 +104,7 @@ const BookingForm = ({ availableTimes, dispatchOnDateChange }) => {
           <input
             id="booking-date"
             type="date"
+            aria-required="true"
             className={inputClass("date")}
             value={values.date}
             onChange={handleChange}
@@ -94,6 +114,7 @@ const BookingForm = ({ availableTimes, dispatchOnDateChange }) => {
           <label htmlFor="booking-time">Time</label>
           <select
             id="booking-time"
+            aria-required="true"
             className={inputClass("time")}
             value={values.time}
             onChange={handleChange}
@@ -112,6 +133,7 @@ const BookingForm = ({ availableTimes, dispatchOnDateChange }) => {
         <label htmlFor="booking-diners">Number of Diners</label>
         <select
           id="booking-diners"
+          aria-required="true"
           className={inputClass("diners")}
           value={values.diners}
           onChange={handleChange}
@@ -130,6 +152,7 @@ const BookingForm = ({ availableTimes, dispatchOnDateChange }) => {
         <label htmlFor="booking-occasion">Occasion</label>
         <select
           id="booking-occasion"
+          aria-required="true"
           className={inputClass("occasion")}
           value={values.occasion}
           onChange={handleChange}
@@ -146,6 +169,7 @@ const BookingForm = ({ availableTimes, dispatchOnDateChange }) => {
         className={`seating-options${
           errors.seating ? " seating-options-error" : ""
         }`}
+        aria-required="true"
       >
         <legend>Seating options</legend>
         <div className="seating-row">
@@ -174,7 +198,7 @@ const BookingForm = ({ availableTimes, dispatchOnDateChange }) => {
         </div>
       </fieldset>
 
-      <button type="submit" className="primary-button booking-submit">
+      <button type="submit" className="primary-button booking-submit" disabled={submitted}>
         Lets go
       </button>
     </form>
